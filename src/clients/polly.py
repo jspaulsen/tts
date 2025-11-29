@@ -1,12 +1,10 @@
 from collections.abc import AsyncGenerator
-from typing import TYPE_CHECKING, AsyncContextManager, cast
+from typing import AsyncContextManager, cast
 from contextlib import asynccontextmanager
 
 import aioboto3
 from types_aiobotocore_polly import PollyClient
-
-if TYPE_CHECKING:
-    from types_aiobotocore_polly.literals import VoiceIdType
+from types_aiobotocore_polly.literals import VoiceIdType  # pylint: disable=unused-import
 
 
 class PollyProvider:
