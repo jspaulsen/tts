@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 import aioboto3
 from types_aiobotocore_polly import PollyClient
-from types_aiobotocore_polly.literals import VoiceIdType  # pylint: disable=unused-import
+from types_aiobotocore_polly.literals import VoiceIdType, TextTypeType  # pylint: disable=unused-import
 
 
 class PollyProvider:

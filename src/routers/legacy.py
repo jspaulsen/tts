@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Response, Depends, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from src.clients.polly import PollyProvider, VoiceIdType
+from src.clients.polly import PollyProvider, VoiceIdType, TextTypeType
 from src.configuration import Configuration
 
 
@@ -31,6 +31,7 @@ async def get_legacy_speech(
     text: str,
     # _token: str = Depends(get_authorization_token)
     token: str,
+    text_type: TextTypeType = 'text',
     configuration: Configuration = Depends(Configuration.get)
 ) -> Response:
     provider = PollyProvider()
@@ -45,7 +46,8 @@ async def get_legacy_speech(
         result = await client.synthesize_speech(
             Text=text,
             OutputFormat='mp3',
-            VoiceId=voice
+            VoiceId=voice,
+            TextType=text_type,
         )
 
         audio_stream = result['AudioStream']
