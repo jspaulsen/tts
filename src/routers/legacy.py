@@ -9,10 +9,6 @@ router = APIRouter(prefix="/legacy")
 security = HTTPBearer()
 
 
-def get_configuration():
-    return Configuration.get()
-
-
 async def get_authorization_token(
     configuration: Configuration = Depends(Configuration.get),
     credentials: HTTPAuthorizationCredentials = Depends(security),
@@ -33,9 +29,17 @@ async def get_authorization_token(
 async def get_legacy_speech(
     voice: VoiceIdType,
     text: str,
-    _token: str = Depends(get_authorization_token)
+    # _token: str = Depends(get_authorization_token)
+    token: str,
+    configuration: Configuration = Depends(Configuration.get)
 ) -> Response:
     provider = PollyProvider()
+
+    if token != configuration.api_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or missing API token",
+        )
 
     async with provider.get() as client:
         result = await client.synthesize_speech(
