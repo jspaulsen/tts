@@ -4,11 +4,14 @@ from collections.abc import AsyncGenerator
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from src.cache import LRUCache
 from src.routers import legacy_router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    app.state.cache = LRUCache()
+
     yield
 
 

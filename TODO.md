@@ -1,2 +1,3 @@
-* Authorization (header)
-* LRU Cache on TTS calls
+* rate limiter
+* Per user api tokens
+* Track per user usage

@@ -7,6 +7,7 @@ CONFIGURATION: Configuration | None = None
 
 class Configuration(BaseSettings):
     api_token: str | None = None
+    maximum_characters_per_request: int = 1024
 
     @staticmethod
     def get() -> Configuration:
