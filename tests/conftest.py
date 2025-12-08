@@ -1,21 +1,16 @@
-from collections.abc import AsyncGenerator
+import os
 
+from fastapi.testclient import TestClient
 import pytest
-from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy.pool import StaticPool
-from sqlmodel import SQLModel
-from sqlmodel.ext.asyncio.session import AsyncSession
 
 
-@pytest.fixture
-async def session() -> AsyncGenerator[AsyncSession, None]:
-    engine = create_async_engine(
-        "sqlite+aiosqlite:///:memory:",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    async with engine.begin() as conn:
-        await conn.run_sync(SQLModel.metadata.create_all)
+os.environ['DATABASE_URL'] = "postgresql://postgres:postgres@localhost/postgres"
+os.environ['ADMIN_API_TOKEN'] = "test_admin_key"
 
-    async with AsyncSession(engine) as session:
-        yield session
+
+from src.main import app
+
+@pytest.fixture(scope="module")
+def client():
+    with TestClient(app) as client:
+        yield client
