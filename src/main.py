@@ -4,6 +4,7 @@ import importlib
 import pkgutil
 
 from fastapi import FastAPI, Request
+import logfire
 from sqlmodel import select
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -28,12 +29,16 @@ for _, module_name, is_pkg in pkgutil.iter_modules(package.__path__, package.__n
         importlib.import_module(module_name)
 
 
+logfire.configure()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     configuration = Configuration.get()
 
     # Setup the database
     database = await Database.initialize(configuration.async_database_url)
+    logfire.instrument_sqlalchemy(database.engine, enable_commenter=True)
 
     # Setup LRU cache
     app.state.cache = LRUCache()
@@ -45,6 +50,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 
 app = FastAPI(title="TTS", lifespan=lifespan)
+logfire.instrument_fastapi(app)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
