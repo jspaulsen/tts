@@ -2,30 +2,17 @@ import xml.etree.ElementTree as ET
 
 from aiobotocore.response import StreamingBody
 from fastapi import APIRouter, HTTPException, Request, Response, Depends, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from src.api.auth import legacy_get_current_user
 from src.cache import LRUCache
 from src.clients.polly import PollyProvider, TextTypeType
 from src.configuration import Configuration
+from src.database import Database
+from src.models.usage import Usage
+from src.models.user import User
 from src.types.aws import AwsStandardVoices
 
 router = APIRouter(prefix="/legacy")
-security = HTTPBearer()
-
-
-async def get_authorization_token(
-    configuration: Configuration = Depends(Configuration.get),
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-) -> str:
-    token = credentials.credentials
-
-    if token != configuration.api_token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or missing API token",
-        )
-
-    return token
 
 
 def cache_key(voice: AwsStandardVoices, text: str, text_type: TextTypeType) -> str:
@@ -41,19 +28,13 @@ async def get_legacy_speech(
     request: Request,
     voice: AwsStandardVoices,
     text: str,
-    # _token: str = Depends(get_authorization_token)
-    token: str | None = None,
     text_type: TextTypeType = 'text',
-    configuration: Configuration = Depends(Configuration.get)
+    configuration: Configuration = Depends(Configuration.get),
+    user: User = Depends(legacy_get_current_user),
 ) -> Response:
+    database: Database = request.app.state.database
     cache: LRUCache[bytes] = request.app.state.cache
     provider = PollyProvider()
-
-    if token != configuration.api_token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or missing API token",
-        )
 
     if len(text) > configuration.maximum_characters_per_request:
         raise HTTPException(
@@ -69,7 +50,6 @@ async def get_legacy_speech(
             content=cached_audio,
             media_type="audio/mpeg",
         )
-
 
     if text_type == 'ssml':
         try:
@@ -103,6 +83,16 @@ async def get_legacy_speech(
 
         # TODO: We should stream the response instead of loading it all into memory
         audio_stream: StreamingBody = result['AudioStream']
+
+        async with database.get_session() as session:
+            session.add(
+                Usage(
+                    user_id=user.id,
+                    characters_used=len(text),
+                )
+            )
+
+            await session.commit()
 
         return Response(
             content=await audio_stream.read(),

@@ -32,9 +32,8 @@ class Database:
             future=True,
         )
 
-        # TODO: Not managing migrations here (probably)
-        async with engine.begin() as conn:
-            await conn.run_sync(SQLModel.metadata.create_all)
+        # async with engine.begin() as conn:
+        #     await conn.run_sync(SQLModel.metadata.create_all)
 
         return cls(engine)
 

@@ -9,11 +9,26 @@ class Configuration(BaseSettings):
     api_token: str | None = None
     maximum_characters_per_request: int = 1024
 
+    database_url: str
+
+    # TODO: Let's find a better way to handle admin API keys
+    admin_api_token: str
+
     @staticmethod
     def get() -> Configuration:
         global CONFIGURATION
 
         if CONFIGURATION is None:
-            CONFIGURATION = Configuration()
+            CONFIGURATION = Configuration()  # type: ignore[assignment]
 
         return CONFIGURATION
+
+    @property
+    def async_database_url(self) -> str:
+        if self.database_url.startswith("postgres://"):
+            return self.database_url.replace("postgres://", "postgresql+asyncpg://", 1)
+
+        if self.database_url.startswith("postgresql://"):
+            return self.database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+
+        return self.database_url
