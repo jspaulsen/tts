@@ -9,7 +9,6 @@ class Configuration(BaseSettings):
     api_token: str | None = None
     maximum_characters_per_request: int = 1024
 
-    # Postgres example: postgres+asyncpg://user:password@localhost/dbname
     database_url: str
 
     # TODO: Let's find a better way to handle admin API keys
@@ -24,7 +23,6 @@ class Configuration(BaseSettings):
 
         return CONFIGURATION
 
-    # TODO: This is incorrect and it needs to be postgresql not postgres
     @property
     def async_database_url(self) -> str:
         if self.database_url.startswith("postgres://"):

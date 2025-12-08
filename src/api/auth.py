@@ -27,21 +27,8 @@ async def get_authorization_token(
 
 async def legacy_get_current_user(
     request: Request,
-    token: str,
+    token: str | None,
 ) -> User:
-    """
-    Dependency that validates an API token and returns the associated User.
-
-    Args:
-        request: The FastAPI request object (used to access app state)
-        token: The API token to validate
-
-    Returns:
-        The User associated with the token
-
-    Raises:
-        HTTPException: 401 if token is missing or invalid
-    """
     if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
