@@ -31,13 +31,14 @@ class TestLegacySpeechEndpoint:
             headers=auth_headers,
             json={"username": username},
         )
+
         assert response.status_code == 200
         return response.json()["api_token"]
 
     @pytest.fixture
     def auth_headers(self) -> dict[str, str]:
         config = Configuration.get()
-        return {"Authorization": f"Bearer {config.admin_api_token}"}
+        return {"Authorization": f"Bearer {config.admin_api_token.get_secret_value()}"}
 
     def test_speech_unauthorized_no_token(self, client: TestClient):
         """Test that /legacy/speech returns 401 when token is empty."""
