@@ -24,7 +24,7 @@ class LRUCache[T]:
             if entry:
                 entry.timestamp = (
                     asyncio
-                        .get_event_loop()
+                        .get_running_loop()
                         .time()
                 )
 
@@ -54,7 +54,7 @@ class LRUCache[T]:
                 value=value,
                 timestamp=(
                     asyncio
-                        .get_event_loop()
+                        .get_running_loop()
                         .time()
                 ),
             )

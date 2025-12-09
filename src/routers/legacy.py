@@ -17,10 +17,10 @@ router = APIRouter(prefix="/legacy")
 
 def cache_key(voice: AwsStandardVoices, text: str, text_type: TextTypeType) -> str:
     nvoice: str = voice.lower()
-    text = text.lower()
+    ntext = text.strip().lower()
     ntext_type: str = text_type.lower()
 
-    return f"{nvoice}:{ntext_type}:{text}"
+    return f"{nvoice}:{ntext_type}:{ntext}"
 
 
 @router.get("/speech")
@@ -94,7 +94,10 @@ async def get_legacy_speech(
 
             await session.commit()
 
+        audio_bytes = await audio_stream.read()
+        await cache.set(key, audio_bytes)
+
         return Response(
-            content=await audio_stream.read(),
+            content=audio_bytes,
             media_type="audio/mpeg",
         )
