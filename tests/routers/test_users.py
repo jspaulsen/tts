@@ -10,7 +10,7 @@ class TestUserRoutes:
     @pytest.fixture
     def auth_headers(self) -> dict[str, str]:
         config = Configuration.get()
-        return {"Authorization": f"Bearer {config.admin_api_token}"}
+        return {"Authorization": f"Bearer {config.admin_api_token.get_secret_value()}"}
 
     def test_get_users_unauthorized(self, client: TestClient):
         """Test that GET /users returns 401 without auth."""

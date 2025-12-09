@@ -16,7 +16,7 @@ async def get_authorization_token(
 ) -> str:
     token = credentials.credentials
 
-    if token != configuration.admin_api_token:
+    if token != configuration.admin_api_token.get_secret_value():
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or missing API token",
