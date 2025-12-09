@@ -1,4 +1,6 @@
 from __future__ import annotations
+import re
+
 from pydantic_settings import BaseSettings
 
 
@@ -25,10 +27,15 @@ class Configuration(BaseSettings):
 
     @property
     def async_database_url(self) -> str:
+        ret = self.database_url
+
         if self.database_url.startswith("postgres://"):
-            return self.database_url.replace("postgres://", "postgresql+asyncpg://", 1)
+            ret =  self.database_url.replace("postgres://", "postgresql+asyncpg://", 1)
 
         if self.database_url.startswith("postgresql://"):
-            return self.database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+            ret = self.database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
 
-        return self.database_url
+        # asyncpg doesn't correctly support sslmode with postgresql+asyncpg://
+        # For now, just remove it from the string outright
+        ret = re.sub(r'[?&]sslmode=[^&]*$', '', ret)
+        return ret
