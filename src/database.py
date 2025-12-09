@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
-from sqlmodel import SQLModel
+from sqlalchemy.pool import AsyncAdaptedQueuePool
 from sqlmodel.ext.asyncio.session import AsyncSession as SQLModelAsyncSession
 
 
@@ -30,6 +30,10 @@ class Database:
             database_url,
             echo=debug,
             future=True,
+            poolclass=AsyncAdaptedQueuePool,
+            pool_size=5,
+            max_overflow=10,
+            pool_pre_ping=True,
         )
 
         # async with engine.begin() as conn:
