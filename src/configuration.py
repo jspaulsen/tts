@@ -6,8 +6,8 @@ CONFIGURATION: Configuration | None = None
 
 
 class Configuration(BaseSettings):
-    api_token: str | None = None
-    maximum_characters_per_request: int = 1024
+    maximum_characters_per_request: int = 2048
+    lru_cache_size: int = 64
 
     database_url: str
 

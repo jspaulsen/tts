@@ -36,7 +36,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     database = await Database.initialize(configuration.async_database_url)
 
     # Setup LRU cache
-    app.state.cache = LRUCache()
+    app.state.cache = LRUCache(max_size=configuration.lru_cache_size)
     app.state.database = database
 
     yield
