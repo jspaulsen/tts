@@ -9,6 +9,7 @@ dependencies = [
     "asyncpg>=0.31.0",
     "fastapi>=0.122.0",
     "httpx>=0.28.1",
+    "logfire[fastapi,sqlalchemy]>=4.16.0",
     "pydantic-settings>=2.0.0",
     "sqlmodel>=0.0.27",
     "types-aiobotocore-polly>=2.25.2",
