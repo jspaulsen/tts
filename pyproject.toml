@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "aioboto3>=15.5.0",
+    "aiobotocore-otel>=1.1.0",
     "asyncpg>=0.31.0",
     "fastapi>=0.122.0",
     "httpx>=0.28.1",
