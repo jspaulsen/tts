@@ -34,7 +34,7 @@ async def get_legacy_speech(
 ) -> Response:
     database: Database = request.app.state.database
     cache: LRUCache[bytes] = request.app.state.cache
-    provider = PollyProvider()
+    provider: PollyProvider = request.app.state.polly_provider
 
     if len(text) > configuration.maximum_characters_per_request:
         raise HTTPException(

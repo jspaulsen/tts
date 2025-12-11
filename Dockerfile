@@ -5,6 +5,9 @@ COPY --from=ghcr.io/amacneil/dbmate /usr/local/bin/dbmate /usr/local/bin/dbmate
 
 # Create app directory and set up user
 RUN \
+    apt-get update && apt-get install -y \
+        curl && \
+    rm -rf /var/lib/apt/lists/* && \
     mkdir /app && \
     chown 1000:1000 /app
 
