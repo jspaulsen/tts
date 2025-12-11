@@ -39,6 +39,22 @@ boto3 = [
 ]
 
 [[package]]
+name = "aiobotocore-otel"
+version = "1.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "aiobotocore" },
+    { name = "opentelemetry-api" },
+    { name = "opentelemetry-instrumentation" },
+    { name = "opentelemetry-propagator-aws-xray" },
+    { name = "opentelemetry-semantic-conventions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/64/2e/fd848d06c55885ee3d628c98ec3a006978a2b8236b74edf63fd8cdd66b83/aiobotocore_otel-1.1.0.tar.gz", hash = "sha256:3449ad4f2e3daf2e9710cc13f79778031b9a243a67cc3638939b6ddf9f89a8de", size = 246772, upload-time = "2025-10-23T20:55:46.393Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4e/31/a3056d2adea086705ce498b8cc6f5e599ea3dd34634fe3cf7a2c580669a1/aiobotocore_otel-1.1.0-py3-none-any.whl", hash = "sha256:d4b252a6b043241dfb222607466b53e59490fe56675d082dd1edfae94298e33a", size = 23557, upload-time = "2025-10-23T20:55:45.295Z" },
+]
+
+[[package]]
 name = "aiofiles"
 version = "25.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -872,6 +888,18 @@ wheels = [
 ]
 
 [[package]]
+name = "opentelemetry-propagator-aws-xray"
+version = "1.0.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "opentelemetry-api" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/f4/31/40004e9e55b1e5694ef3a7526f0b7637df44196fc68a8b7d248a3684680f/opentelemetry_propagator_aws_xray-1.0.2.tar.gz", hash = "sha256:6b2cee5479d2ef0172307b66ed2ed151f598a0fd29b3c01133ac87ca06326260", size = 10994, upload-time = "2024-08-05T17:45:57.601Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ea/89/849a0847871fd9745315896ad9e23d6479db84d90b8b36c4c26dc46e92b8/opentelemetry_propagator_aws_xray-1.0.2-py3-none-any.whl", hash = "sha256:1c99181ee228e99bddb638a0c911a297fa21f1c3a0af951f841e79919b5f1934", size = 10856, upload-time = "2024-08-05T17:45:56.492Z" },
+]
+
+[[package]]
 name = "opentelemetry-proto"
 version = "1.39.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1317,6 +1345,7 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "aioboto3" },
+    { name = "aiobotocore-otel" },
     { name = "asyncpg" },
     { name = "fastapi" },
     { name = "httpx" },
@@ -1338,6 +1367,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "aioboto3", specifier = ">=15.5.0" },
+    { name = "aiobotocore-otel", specifier = ">=1.1.0" },
     { name = "asyncpg", specifier = ">=0.31.0" },
     { name = "fastapi", specifier = ">=0.122.0" },
     { name = "httpx", specifier = ">=0.28.1" },
