@@ -14,6 +14,7 @@ from src.configuration import Configuration
 from src.database import Database
 import src.models
 from src.cache import LRUCache
+from src.clients.polly import PollyProvider
 from src.routers import (
     legacy_router,
     users_router,
@@ -43,6 +44,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Setup LRU cache
     app.state.cache = LRUCache(max_size=configuration.lru_cache_size)
     app.state.database = database
+    app.state.polly_provider = PollyProvider()
 
     yield
 
