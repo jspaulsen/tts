@@ -1,11 +1,10 @@
 import xml.etree.ElementTree as ET
 
-from aiobotocore.response import StreamingBody
 from fastapi import APIRouter, HTTPException, Request, Response, Depends, status
 
 from src.api.auth import legacy_get_current_user
 from src.cache import LRUCache
-from src.clients.polly import PollyProvider, TextTypeType
+from src.clients.polly import PollyProvider, SSMLException, TextTypeType
 from src.configuration import Configuration
 from src.database import Database
 from src.models.usage import Usage
@@ -28,13 +27,13 @@ async def get_legacy_speech(
     request: Request,
     voice: AwsStandardVoices,
     text: str,
-    text_type: TextTypeType = 'text',
+    text_type: TextTypeType = TextTypeType.Text,
     configuration: Configuration = Depends(Configuration.get),
     user: User = Depends(legacy_get_current_user),
 ) -> Response:
     database: Database = request.app.state.database
     cache: LRUCache[bytes] = request.app.state.cache
-    provider: PollyProvider = request.app.state.polly_provider
+    provider = PollyProvider()
 
     if len(text) > configuration.maximum_characters_per_request:
         raise HTTPException(
@@ -60,44 +59,37 @@ async def get_legacy_speech(
                 detail=f"Invalid SSML format: {str(e)}. Ensure your SSML is well-formed XML and includes required tags like <speak>.",
             )
 
-    async with provider.get() as client:
-        try:
-            result = await client.synthesize_speech(
-                Text=text,
-                OutputFormat='mp3',
-                VoiceId=voice,
-                TextType=text_type,
-            )
-
-        except client.exceptions.InvalidSsmlException as e:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"SSML synthesis error: {str(e)}. Please check your SSML content.",
-            )
-
-        except Exception as e:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"An error occurred during speech synthesis: {str(e)}",
-            )
-
-        # TODO: We should stream the response instead of loading it all into memory
-        audio_stream: StreamingBody = result['AudioStream']
-
-        async with database.get_session() as session:
-            session.add(
-                Usage(
-                    user_id=user.id,
-                    characters_used=len(text),
-                )
-            )
-
-            await session.commit()
-
-        audio_bytes = await audio_stream.read()
-        await cache.set(key, audio_bytes)
-
-        return Response(
-            content=audio_bytes,
-            media_type="audio/mpeg",
+    try:
+        audio_bytes = await provider.synthesize_speech(
+            text=text,
+            voice_id=voice,
+            output_format='mp3',
+            text_type=text_type,
         )
+
+    except SSMLException as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"SSML synthesis error: {str(e)}. Please check your SSML content.",
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An error occurred during speech synthesis: {str(e)}",
+        )
+
+    async with database.get_session() as session:
+        session.add(
+            Usage(
+                user_id=user.id,
+                characters_used=len(text),
+            )
+        )
+
+        await session.commit()
+
+    await cache.set(key, audio_bytes)
+    return Response(
+        content=audio_bytes,
+        media_type="audio/mpeg",
+    )

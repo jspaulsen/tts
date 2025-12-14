@@ -1,26 +1,60 @@
-from collections.abc import AsyncGenerator
-from typing import AsyncContextManager, cast
-from contextlib import asynccontextmanager
+import asyncio
+from enum import StrEnum
 
-import aioboto3
-from aiobotocore.config import AioConfig
-from types_aiobotocore_polly import PollyClient
-from types_aiobotocore_polly.literals import VoiceIdType, TextTypeType  # pylint: disable=unused-import
+import boto3
+
+from src.types.aws import AwsStandardVoices
+
+
+class SSMLException(Exception):
+    pass
+
+
+class TextTypeType(StrEnum):
+    Text = 'text'
+    Ssml = 'ssml'
 
 
 class PollyProvider:
     def __init__(self, region_name: str = 'us-west-2'):
         self.region_name = region_name
-        self.session = aioboto3.Session()
-        self.config = AioConfig(
-            connect_timeout=10,
-            read_timeout=10,
-        )
+        self.session = boto3.Session()
 
-    @asynccontextmanager
-    async def get(self) -> AsyncGenerator[PollyClient, None]:
-        async with cast(
-            AsyncContextManager[PollyClient],
-            self.session.client("polly", region_name=self.region_name, config=self.config)
-        ) as client:
-            yield client
+    def _synthesize(
+        self,
+        text: str,
+        voice_id: AwsStandardVoices,
+        output_format: str = 'mp3',
+        text_type: TextTypeType = TextTypeType.Text,
+    ) -> bytes:
+        polly_client = self.session.client('polly', region_name=self.region_name)
+
+        try:
+            response = polly_client.synthesize_speech(
+                Text=text,
+                VoiceId=voice_id,
+                OutputFormat=output_format,
+                TextType=text_type,
+            )
+        except polly_client.exceptions.InvalidSsmlException as e:
+            raise SSMLException(str(e)) from e
+
+        return response['AudioStream'].read()
+
+    async def synthesize_speech(
+        self,
+        text: str,
+        voice_id: AwsStandardVoices,
+        output_format: str = 'mp3',
+        text_type: TextTypeType = TextTypeType.Text,
+    ) -> bytes:
+        loop = asyncio.get_running_loop()
+
+        return await loop.run_in_executor(
+            None,
+            self._synthesize,
+            text,
+            voice_id,
+            output_format,
+            text_type
+        )

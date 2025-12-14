@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 import uuid
 
 import pytest
@@ -99,26 +99,11 @@ class TestLegacySpeechEndpoint:
         """Test successful speech synthesis."""
         mock_audio_content = b"fake-audio-content"
 
-        # Create a mock streaming body
-        mock_stream = AsyncMock()
-        mock_stream.read = AsyncMock(return_value=mock_audio_content)
-
-        # Create mock polly client
-        mock_polly_client = AsyncMock()
-        mock_polly_client.synthesize_speech = AsyncMock(
-            return_value={"AudioStream": mock_stream}
-        )
-        mock_polly_client.exceptions = MagicMock()
-
-        # Create async context manager for the client
-        mock_context = AsyncMock()
-        mock_context.__aenter__ = AsyncMock(return_value=mock_polly_client)
-        mock_context.__aexit__ = AsyncMock(return_value=None)
-
-        # Mock the PollyProvider.get method
-        mocker.patch(
-            "src.routers.legacy.PollyProvider.get",
-            return_value=mock_context,
+        # Mock the PollyProvider.synthesize_speech method
+        mock_synthesize = mocker.patch(
+            "src.routers.legacy.PollyProvider.synthesize_speech",
+            new_callable=AsyncMock,
+            return_value=mock_audio_content,
         )
 
         response = client.get(
@@ -131,11 +116,11 @@ class TestLegacySpeechEndpoint:
         assert response.headers["content-type"] == "audio/mpeg"
 
         # Verify polly was called with correct parameters
-        mock_polly_client.synthesize_speech.assert_called_once_with(
-            Text="Hello world",
-            OutputFormat="mp3",
-            VoiceId="Amy",
-            TextType="text",
+        mock_synthesize.assert_called_once_with(
+            text="Hello world",
+            voice_id="Amy",
+            output_format="mp3",
+            text_type="text",
         )
 
     def test_speech_with_ssml(
@@ -147,22 +132,10 @@ class TestLegacySpeechEndpoint:
         """Test speech synthesis with valid SSML."""
         mock_audio_content = b"fake-ssml-audio"
 
-        mock_stream = AsyncMock()
-        mock_stream.read = AsyncMock(return_value=mock_audio_content)
-
-        mock_polly_client = AsyncMock()
-        mock_polly_client.synthesize_speech = AsyncMock(
-            return_value={"AudioStream": mock_stream}
-        )
-        mock_polly_client.exceptions = MagicMock()
-
-        mock_context = AsyncMock()
-        mock_context.__aenter__ = AsyncMock(return_value=mock_polly_client)
-        mock_context.__aexit__ = AsyncMock(return_value=None)
-
-        mocker.patch(
-            "src.routers.legacy.PollyProvider.get",
-            return_value=mock_context,
+        mock_synthesize = mocker.patch(
+            "src.routers.legacy.PollyProvider.synthesize_speech",
+            new_callable=AsyncMock,
+            return_value=mock_audio_content,
         )
 
         ssml_text = "<speak>Hello world</speak>"
@@ -179,11 +152,11 @@ class TestLegacySpeechEndpoint:
         assert response.status_code == 200
         assert response.content == mock_audio_content
 
-        mock_polly_client.synthesize_speech.assert_called_once_with(
-            Text=ssml_text,
-            OutputFormat="mp3",
-            VoiceId="Brian",
-            TextType="ssml",
+        mock_synthesize.assert_called_once_with(
+            text=ssml_text,
+            voice_id="Brian",
+            output_format="mp3",
+            text_type="ssml",
         )
 
     def test_speech_returns_cached_response(
@@ -195,22 +168,10 @@ class TestLegacySpeechEndpoint:
         """Test that cached responses are returned without calling Polly."""
         mock_audio_content = b"cached-audio-content"
 
-        mock_stream = AsyncMock()
-        mock_stream.read = AsyncMock(return_value=mock_audio_content)
-
-        mock_polly_client = AsyncMock()
-        mock_polly_client.synthesize_speech = AsyncMock(
-            return_value={"AudioStream": mock_stream}
-        )
-        mock_polly_client.exceptions = MagicMock()
-
-        mock_context = AsyncMock()
-        mock_context.__aenter__ = AsyncMock(return_value=mock_polly_client)
-        mock_context.__aexit__ = AsyncMock(return_value=None)
-
-        mocker.patch(
-            "src.routers.legacy.PollyProvider.get",
-            return_value=mock_context,
+        mock_synthesize = mocker.patch(
+            "src.routers.legacy.PollyProvider.synthesize_speech",
+            new_callable=AsyncMock,
+            return_value=mock_audio_content,
         )
 
         # First request - should call Polly
@@ -219,7 +180,7 @@ class TestLegacySpeechEndpoint:
             params={"voice": "Amy", "text": "cache test", "token": user_token},
         )
         assert response1.status_code == 200
-        assert mock_polly_client.synthesize_speech.call_count == 1
+        assert mock_synthesize.call_count == 1
 
         # Second request with same parameters - should use cache
         response2 = client.get(
@@ -229,7 +190,7 @@ class TestLegacySpeechEndpoint:
         assert response2.status_code == 200
         assert response2.content == mock_audio_content
         # Polly should not be called again
-        assert mock_polly_client.synthesize_speech.call_count == 1
+        assert mock_synthesize.call_count == 1
 
     def test_speech_polly_invalid_ssml_exception(
         self,
@@ -238,24 +199,12 @@ class TestLegacySpeechEndpoint:
         mocker,
     ):
         """Test handling of Polly InvalidSsmlException."""
-        # Create a mock exception class
-        class MockInvalidSsmlException(Exception):
-            pass
-
-        mock_polly_client = AsyncMock()
-        mock_polly_client.exceptions = MagicMock()
-        mock_polly_client.exceptions.InvalidSsmlException = MockInvalidSsmlException
-        mock_polly_client.synthesize_speech = AsyncMock(
-            side_effect=MockInvalidSsmlException("Invalid SSML")
-        )
-
-        mock_context = AsyncMock()
-        mock_context.__aenter__ = AsyncMock(return_value=mock_polly_client)
-        mock_context.__aexit__ = AsyncMock(return_value=None)
+        from src.clients.polly import SSMLException
 
         mocker.patch(
-            "src.routers.legacy.PollyProvider.get",
-            return_value=mock_context,
+            "src.routers.legacy.PollyProvider.synthesize_speech",
+            new_callable=AsyncMock,
+            side_effect=SSMLException("Invalid SSML"),
         )
 
         # Use valid XML but Polly rejects it
@@ -279,22 +228,10 @@ class TestLegacySpeechEndpoint:
         mocker,
     ):
         """Test handling of generic Polly exceptions."""
-        mock_polly_client = AsyncMock()
-        mock_polly_client.exceptions = MagicMock()
-        mock_polly_client.exceptions.InvalidSsmlException = type(
-            "InvalidSsmlException", (Exception,), {}
-        )
-        mock_polly_client.synthesize_speech = AsyncMock(
-            side_effect=RuntimeError("AWS connection error")
-        )
-
-        mock_context = AsyncMock()
-        mock_context.__aenter__ = AsyncMock(return_value=mock_polly_client)
-        mock_context.__aexit__ = AsyncMock(return_value=None)
-
         mocker.patch(
-            "src.routers.legacy.PollyProvider.get",
-            return_value=mock_context,
+            "src.routers.legacy.PollyProvider.synthesize_speech",
+            new_callable=AsyncMock,
+            side_effect=RuntimeError("AWS connection error"),
         )
 
         response = client.get(
@@ -314,22 +251,10 @@ class TestLegacySpeechEndpoint:
         """Test that cache key is case insensitive for text."""
         mock_audio_content = b"audio-content"
 
-        mock_stream = AsyncMock()
-        mock_stream.read = AsyncMock(return_value=mock_audio_content)
-
-        mock_polly_client = AsyncMock()
-        mock_polly_client.synthesize_speech = AsyncMock(
-            return_value={"AudioStream": mock_stream}
-        )
-        mock_polly_client.exceptions = MagicMock()
-
-        mock_context = AsyncMock()
-        mock_context.__aenter__ = AsyncMock(return_value=mock_polly_client)
-        mock_context.__aexit__ = AsyncMock(return_value=None)
-
-        mocker.patch(
-            "src.routers.legacy.PollyProvider.get",
-            return_value=mock_context,
+        mock_synthesize = mocker.patch(
+            "src.routers.legacy.PollyProvider.synthesize_speech",
+            new_callable=AsyncMock,
+            return_value=mock_audio_content,
         )
 
         # First request with lowercase
@@ -338,7 +263,7 @@ class TestLegacySpeechEndpoint:
             params={"voice": "Amy", "text": "hello", "token": user_token},
         )
         assert response1.status_code == 200
-        assert mock_polly_client.synthesize_speech.call_count == 1
+        assert mock_synthesize.call_count == 1
 
         # Second request with uppercase - should hit cache
         response2 = client.get(
@@ -347,7 +272,7 @@ class TestLegacySpeechEndpoint:
         )
         assert response2.status_code == 200
         # Cache hit, so Polly shouldn't be called again
-        assert mock_polly_client.synthesize_speech.call_count == 1
+        assert mock_synthesize.call_count == 1
 
     def test_speech_different_voices_not_cached_together(
         self,
@@ -360,22 +285,10 @@ class TestLegacySpeechEndpoint:
 
         mock_audio_content = b"audio-content"
 
-        mock_stream = AsyncMock()
-        mock_stream.read = AsyncMock(return_value=mock_audio_content)
-
-        mock_polly_client = AsyncMock()
-        mock_polly_client.synthesize_speech = AsyncMock(
-            return_value={"AudioStream": mock_stream}
-        )
-        mock_polly_client.exceptions = MagicMock()
-
-        mock_context = AsyncMock()
-        mock_context.__aenter__ = AsyncMock(return_value=mock_polly_client)
-        mock_context.__aexit__ = AsyncMock(return_value=None)
-
-        mocker.patch(
-            "src.routers.legacy.PollyProvider.get",
-            return_value=mock_context,
+        mock_synthesize = mocker.patch(
+            "src.routers.legacy.PollyProvider.synthesize_speech",
+            new_callable=AsyncMock,
+            return_value=mock_audio_content,
         )
 
         # Use unique text to avoid cache collisions with other tests
@@ -395,4 +308,4 @@ class TestLegacySpeechEndpoint:
         )
         assert response2.status_code == 200
         # Should call Polly twice since different voices
-        assert mock_polly_client.synthesize_speech.call_count == 2
+        assert mock_synthesize.call_count == 2
