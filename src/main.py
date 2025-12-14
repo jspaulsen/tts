@@ -5,7 +5,8 @@ import pkgutil
 
 from fastapi import FastAPI, Request
 import logfire
-from opentelemetry.instrumentation.aiobotocore import AioBotocoreInstrumentor
+# from opentelemetry.instrumentation.aiobotocore import AioBotocoreInstrumentor
+from opentelemetry.instrumentation.botocore import BotocoreInstrumentor
 from sqlmodel import select
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -32,7 +33,7 @@ for _, module_name, is_pkg in pkgutil.iter_modules(package.__path__, package.__n
 
 
 logfire.configure()
-AioBotocoreInstrumentor().instrument()
+BotocoreInstrumentor().instrument()
 
 
 @asynccontextmanager
