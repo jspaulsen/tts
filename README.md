@@ -32,7 +32,16 @@ uv sync --dev
 | `MAXIMUM_CHARACTERS_PER_REQUEST` | No | Max characters per TTS request (default: 2048) |
 | `LRU_CACHE_SIZE` | No | Size of the LRU cache (default: 64) |
 
-AWS credentials should be configured via standard AWS methods (environment variables, `~/.aws/credentials`, IAM role, etc.).
+## AWS Authentication
+
+This service requires AWS credentials with access to Amazon Polly. You can configure credentials using any of the standard AWS methods:
+
+- **Environment variables**: Set `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and optionally `AWS_REGION`
+- **Shared credentials file**: Configure `~/.aws/credentials`
+- **IAM role**: When running on AWS infrastructure (EC2, ECS, Lambda), use an attached IAM role
+- **AWS SSO**: Use `aws sso login` with a configured profile
+
+The IAM policy must include the `polly:SynthesizeSpeech` permission.
 
 ## Local Development
 
