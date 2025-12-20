@@ -1,4 +1,5 @@
 import asyncio
+from contextlib import closing
 from enum import StrEnum
 
 import boto3
@@ -39,7 +40,10 @@ class PollyProvider:
         except polly_client.exceptions.InvalidSsmlException as e:
             raise SSMLException(str(e)) from e
 
-        return response['AudioStream'].read()
+        with closing(response['AudioStream']) as stream:
+            result = stream.read()
+
+        return result
 
     async def synthesize_speech(
         self,
