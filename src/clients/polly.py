@@ -3,6 +3,7 @@ from contextlib import closing
 from enum import StrEnum
 
 import boto3
+from botocore.config import Config
 
 from src.types.aws import AwsStandardVoices
 
@@ -19,6 +20,18 @@ class TextTypeType(StrEnum):
 class PollyProvider:
     def __init__(self, region_name: str = 'us-west-2'):
         self.region_name = region_name
+        self.config = Config(
+            read_timeout=5,  # Force the socket to raise an exception if no data is received within 5 seconds.
+            connect_timeout=5,  # Fail fast if the initial handshake takes too long.
+            retries={
+                'max_attempts': 2,
+                'mode': 'standard'
+            },
+
+            # Ask the OS to send "Are you there?" packets to keep the NAT entry active.
+            # tcp_keepalive=True
+        )
+
         self.session = boto3.Session()
 
     def _synthesize(
@@ -28,7 +41,11 @@ class PollyProvider:
         output_format: str = 'mp3',
         text_type: TextTypeType = TextTypeType.Text,
     ) -> bytes:
-        polly_client = self.session.client('polly', region_name=self.region_name)
+        polly_client = self.session.client(
+            'polly',
+            region_name=self.region_name,
+            config=self.config,
+        )
 
         try:
             response = polly_client.synthesize_speech(

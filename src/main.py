@@ -1,11 +1,13 @@
 from contextlib import asynccontextmanager
 from collections.abc import AsyncGenerator
 import importlib
+import logging
 import pkgutil
 
+import boto3
 from fastapi import FastAPI, Request
 import logfire
-# from opentelemetry.instrumentation.aiobotocore import AioBotocoreInstrumentor
+
 from opentelemetry.instrumentation.botocore import BotocoreInstrumentor
 from sqlmodel import select
 from fastapi.middleware.cors import CORSMiddleware
@@ -16,7 +18,6 @@ from src.configuration import Configuration
 from src.database import Database
 import src.models
 from src.cache import LRUCache
-from src.clients.polly import PollyProvider
 from src.routers import (
     legacy_router,
     users_router,
@@ -32,13 +33,22 @@ for _, module_name, is_pkg in pkgutil.iter_modules(package.__path__, package.__n
         importlib.import_module(module_name)
 
 
+logger = logging.getLogger()
+
+
 logfire.configure()
 BotocoreInstrumentor().instrument()
+
+# Enable botocore logging for debugging purposes
+# since we're still running into some hanging issues with Polly.
+boto3.set_stream_logger('botocore')
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     configuration = Configuration.get()
+
+    logger.setLevel(configuration.log_level)
 
     # Setup the database
     database = await Database.initialize(configuration.async_database_url)
@@ -47,7 +57,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Setup LRU cache
     app.state.cache = LRUCache(max_size=configuration.lru_cache_size)
     app.state.database = database
-    app.state.polly_provider = PollyProvider()
 
     yield
 
