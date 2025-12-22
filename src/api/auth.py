@@ -38,10 +38,28 @@ async def legacy_get_current_user(
     database: Database = request.app.state.database
 
     async with database.get_session() as session:
-        result = await session.exec(
-            select(User).where(User.api_token == token)
-        )
+        result = await session.exec(select(User).where(User.api_token == token))
+        user = result.one_or_none()
 
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid API token",
+            )
+
+    return user
+
+
+async def get_current_user(
+    request: Request,
+    # configuration: Configuration = Depends(Configuration.get),
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+) -> User:
+    database: Database = request.app.state.database
+    token = credentials.credentials
+
+    async with database.get_session() as session:
+        result = await session.exec(select(User).where(User.api_token == token))
         user = result.one_or_none()
 
         if not user:

@@ -9,9 +9,12 @@ dependencies = [
     "boto3>=1.42.9",
     "fastapi>=0.122.0",
     "httpx>=0.28.1",
+    "kokoro>=0.9.4",
     "logfire[fastapi,sqlalchemy]>=4.16.0",
     "opentelemetry-instrumentation-botocore>=0.60b1",
+    "pip>=25.3",
     "pydantic-settings>=2.0.0",
+    "soundfile>=0.13.1",
     "sqlmodel>=0.0.27",
     "uvicorn>=0.38.0",
 ]
