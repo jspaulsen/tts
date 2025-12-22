@@ -17,6 +17,9 @@ class Configuration(BaseSettings):
     # TODO: Let's find a better way to handle admin API keys
     admin_api_token: SecretStr
 
+    log_level: str = "INFO"
+
+
     @staticmethod
     def get() -> Configuration:
         global CONFIGURATION
