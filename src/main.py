@@ -33,22 +33,35 @@ for _, module_name, is_pkg in pkgutil.iter_modules(package.__path__, package.__n
         importlib.import_module(module_name)
 
 
+CONFIGURATION: Configuration = Configuration.get()
+
+
 logger = logging.getLogger()
 
 
-logfire.configure()
-BotocoreInstrumentor().instrument()
-
 # Enable botocore logging for debugging purposes
 # since we're still running into some hanging issues with Polly.
-boto3.set_stream_logger('botocore')
+logger.setLevel(logging.DEBUG)
+boto3.set_stream_logger('botocore', logging.DEBUG)
+boto3.set_stream_logger('boto3', logging.DEBUG)
+
+
+# Configure Logfire logging
+logfire.configure(
+    send_to_logfire=CONFIGURATION.logfire_token is not None,
+    token=CONFIGURATION.logfire_token.get_secret_value() if CONFIGURATION.logfire_token else None,
+)
+
+logger.addHandler(logfire.LogfireLoggingHandler())
+
+
+# Instrument botocore with OpenTelemetry
+BotocoreInstrumentor().instrument()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     configuration = Configuration.get()
-
-    logger.setLevel(configuration.log_level)
 
     # Setup the database
     database = await Database.initialize(configuration.async_database_url)

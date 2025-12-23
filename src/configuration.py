@@ -17,6 +17,7 @@ class Configuration(BaseSettings):
     # TODO: Let's find a better way to handle admin API keys
     admin_api_token: SecretStr
 
+    logfire_token: SecretStr | None = None
     log_level: str = "INFO"
 
 
