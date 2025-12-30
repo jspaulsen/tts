@@ -30,22 +30,21 @@ class LRUCache[T]:
 
             return entry.value if entry else None
 
-    async def find_oldest_key(self) -> str | None:
-        async with self.lock:
-            if not self.cache:
-                return None
+    def _find_oldest_key(self) -> str | None:
+        if not self.cache:
+            return None
 
-            oldest_key = min(
-                self.cache.keys(),
-                key=lambda k: self.cache[k].timestamp,
-            )
+        oldest_key = min(
+            self.cache.keys(),
+            key=lambda k: self.cache[k].timestamp,
+        )
 
-            return oldest_key
+        return oldest_key
 
     async def set(self, key: str, value: T) -> None:
         async with self.lock:
             if len(self.cache) >= self.max_size:
-                oldest_key = await self.find_oldest_key()
+                oldest_key = self._find_oldest_key()
 
                 if oldest_key is not None:
                     del self.cache[oldest_key]

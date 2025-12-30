@@ -39,14 +39,6 @@ CONFIGURATION: Configuration = Configuration.get()
 logger = logging.getLogger()
 
 
-# Enable botocore logging for debugging purposes
-# since we're still running into some hanging issues with Polly.
-logger.setLevel(logging.DEBUG)
-boto3.set_stream_logger('', logging.DEBUG)
-# boto3.set_stream_logger('botocore', logging.DEBUG)
-# boto3.set_stream_logger('boto3', logging.DEBUG)
-
-
 # Configure Logfire logging
 logfire.configure(
     send_to_logfire=CONFIGURATION.logfire_token is not None,
