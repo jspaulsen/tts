@@ -1,5 +1,6 @@
 import asyncio
 import io
+from typing import get_args
 
 from kokoro import KPipeline
 import numpy as np
@@ -47,7 +48,6 @@ class KokoroProvider(TTSProvider[KokoroVoices]):
 
             return buffer.getvalue()
 
-
     async def synthesize_speech(
         self,
         voice: KokoroVoices,
@@ -62,3 +62,19 @@ class KokoroProvider(TTSProvider[KokoroVoices]):
             voice,
             text,
         )
+
+    @property
+    def can_cache(self) -> bool:
+        return True  # Kokoro voices are standard voices and can be cached.
+
+    @property
+    def supports_ssml(self) -> bool:
+        return False
+
+    @property
+    def has_financial_cost(self) -> bool:
+        return False  # Kokoro is open-source and free to use.
+
+    @staticmethod
+    def voices() -> list[str]:
+        return list(get_args(KokoroVoices))

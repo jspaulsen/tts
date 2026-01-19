@@ -1,7 +1,7 @@
 from typing import Literal
 
 
-KokoroEnVoices = Literal[
+KokoroVoices = Literal[
     "af_heart",
     "af_alloy",
     "af_aoede",
@@ -26,4 +26,4 @@ KokoroEnVoices = Literal[
 
 
 # NOTE: This will end up being a union of multiple literals as more languages are added
-KokoroVoices = KokoroEnVoices
+# KokoroVoices = KokoroEnVoices

@@ -1,7 +1,7 @@
 from typing import Literal
 
 
-AwsStandardVoices = Literal[
+AWSStandardVoices = Literal[
     "Aditi",
     "Amy",
     "Astrid",

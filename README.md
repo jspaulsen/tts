@@ -31,6 +31,7 @@ uv sync --dev
 | `ADMIN_API_TOKEN` | Yes | Admin API authentication token |
 | `MAXIMUM_CHARACTERS_PER_REQUEST` | No | Max characters per TTS request (default: 2048) |
 | `LRU_CACHE_SIZE` | No | Size of the LRU cache (default: 64) |
+| `HF_HOME` | No | HuggingFace cache directory for Kokoro model downloads (useful when mounting as a Docker volume). See [HuggingFace environment variables](https://huggingface.co/docs/huggingface_hub/en/package_reference/environment_variables) for more options. |
 
 ## AWS Authentication
 

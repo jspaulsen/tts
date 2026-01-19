@@ -9,23 +9,16 @@ from src.configuration import Configuration
 from src.database import Database
 from src.models.usage import Usage
 from src.models.user import User
-from src.types.aws import AwsStandardVoices
+from src.types.aws import AWSStandardVoices
+
 
 router = APIRouter(prefix="/legacy")
-
-
-def cache_key(voice: AwsStandardVoices, text: str, text_type: TextTypeType) -> str:
-    nvoice: str = voice.lower()
-    ntext = text.strip().lower()
-    ntext_type: str = text_type.lower()
-
-    return f"{nvoice}:{ntext_type}:{ntext}"
 
 
 @router.get("/speech")
 async def get_legacy_speech(
     request: Request,
-    voice: AwsStandardVoices,
+    voice: AWSStandardVoices,
     text: str,
     text_type: TextTypeType = TextTypeType.Text,
     configuration: Configuration = Depends(Configuration.get),
@@ -41,7 +34,7 @@ async def get_legacy_speech(
             detail=f"Text length exceeds maximum of {configuration.maximum_characters_per_request} characters.",
         )
 
-    key = cache_key(voice, text, text_type)
+    key = provider.generate_cache(voice, text)
     cached_audio = await cache.get(key)
 
     if cached_audio is not None:
@@ -50,7 +43,7 @@ async def get_legacy_speech(
             media_type="audio/mpeg",
         )
 
-    if text_type == 'ssml':
+    if text_type == TextTypeType.Ssml:
         try:
             ET.fromstring(text)
         except ET.ParseError as e:
@@ -61,8 +54,8 @@ async def get_legacy_speech(
 
     try:
         audio_bytes = await provider.synthesize_speech(
-            text=text,
-            voice_id=voice,
+            voice,
+            text,
             output_format='mp3',
             text_type=text_type,
         )
