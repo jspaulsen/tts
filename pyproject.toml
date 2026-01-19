@@ -16,6 +16,7 @@ dependencies = [
     "pydantic-settings>=2.0.0",
     "soundfile>=0.13.1",
     "sqlmodel>=0.0.27",
+    "torch>=2.9.1",
     "uvicorn>=0.38.0",
 ]
 
@@ -26,3 +27,14 @@ dev = [
     "pytest-asyncio>=0.24.0",
     "pytest-mock>=3.15.1",
 ]
+
+[tool.uv]
+index-strategy = "unsafe-best-match"
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
