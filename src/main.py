@@ -4,7 +4,6 @@ import importlib
 import logging
 import pkgutil
 
-import boto3
 from fastapi import FastAPI, Request
 import logfire
 
@@ -20,8 +19,11 @@ import src.models
 from src.cache import LRUCache
 from src.routers import (
     legacy_router,
+    speech_router,
     users_router,
 )
+
+from src.tts.kokoro import KokoroProvider
 
 
 # Dynamically import all models in src.models
@@ -64,6 +66,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     app.state.cache = LRUCache(max_size=configuration.lru_cache_size)
     app.state.database = database
 
+    # TODO: These providers should be initialized based on configuration
+    # not hardcoded here.
+    app.state.kokoro_provider = KokoroProvider(lang_code='a')
+
     yield
 
     await database.close()
@@ -81,6 +87,7 @@ app.add_middleware(
 )
 
 app.include_router(legacy_router)
+app.include_router(speech_router)
 app.include_router(users_router)
 
 

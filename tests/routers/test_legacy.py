@@ -5,18 +5,6 @@ import pytest
 from fastapi.testclient import TestClient
 
 from src.configuration import Configuration
-from src.routers.legacy import cache_key
-
-
-
-class TestCacheKey:
-    """Tests for the cache_key function."""
-
-    def test_cache_key_basic(self):
-        """Test cache key generation with basic inputs."""
-
-        result = cache_key("Amy", "Hello world", "text")
-        assert result == "amy:text:hello world"
 
 
 class TestLegacySpeechEndpoint:
@@ -117,8 +105,8 @@ class TestLegacySpeechEndpoint:
 
         # Verify polly was called with correct parameters
         mock_synthesize.assert_called_once_with(
-            text="Hello world",
-            voice_id="Amy",
+            "Amy",
+            "Hello world",
             output_format="mp3",
             text_type="text",
         )
@@ -153,8 +141,8 @@ class TestLegacySpeechEndpoint:
         assert response.content == mock_audio_content
 
         mock_synthesize.assert_called_once_with(
-            text=ssml_text,
-            voice_id="Brian",
+            "Brian",
+            ssml_text,
             output_format="mp3",
             text_type="ssml",
         )

@@ -1,4 +1,1 @@
-* logfire
-* Per user api tokens
-* rate limiter
-* Track per user usage
+* Configurable support for multiple TTS providers
