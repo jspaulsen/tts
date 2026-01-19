@@ -2,7 +2,7 @@ import xml.etree.ElementTree as ET
 
 from fastapi import APIRouter, HTTPException, Request, Response, Depends, status
 
-from src.api.auth import legacy_get_current_user
+from src.api.auth import get_current_user
 from src.cache import LRUCache
 from src.clients.polly import PollyProvider, SSMLException, TextTypeType
 from src.configuration import Configuration
@@ -22,7 +22,7 @@ async def get_legacy_speech(
     text: str,
     text_type: TextTypeType = TextTypeType.Text,
     configuration: Configuration = Depends(Configuration.get),
-    user: User = Depends(legacy_get_current_user),
+    user: User = Depends(get_current_user),
 ) -> Response:
     database: Database = request.app.state.database
     cache: LRUCache[bytes] = request.app.state.cache

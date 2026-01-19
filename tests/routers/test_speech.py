@@ -32,18 +32,18 @@ class TestSpeechEndpoint:
 
     def test_speech_unauthorized_no_token(self, client: TestClient):
         """Test that /v1/speech returns 401 when no authorization header is provided."""
-        response = client.post(
+        response = client.get(
             "/v1/speech",
-            json={"voice": "Amy", "text": "Hello"},
+            params={"voice": "Amy", "text": "Hello"},
         )
         assert response.status_code == 401
 
     def test_speech_unauthorized_invalid_token(self, client: TestClient):
         """Test that /v1/speech returns 401 with invalid token."""
-        response = client.post(
+        response = client.get(
             "/v1/speech",
             headers={"Authorization": "Bearer invalid-token"},
-            json={"voice": "Amy", "text": "Hello"},
+            params={"voice": "Amy", "text": "Hello"},
         )
         assert response.status_code == 401
 
@@ -53,10 +53,10 @@ class TestSpeechEndpoint:
         user_auth_headers: dict[str, str],
     ):
         """Test that /v1/speech returns 400 for invalid SSML."""
-        response = client.post(
+        response = client.get(
             "/v1/speech",
             headers=user_auth_headers,
-            json={
+            params={
                 "voice": "Amy",
                 "text": "<speak>unclosed tag",
                 "text_type": "ssml",
@@ -80,10 +80,10 @@ class TestSpeechEndpoint:
             return_value=mock_audio_content,
         )
 
-        response = client.post(
+        response = client.get(
             "/v1/speech",
             headers=user_auth_headers,
-            json={"voice": "Amy", "text": "Hello world"},
+            params={"voice": "Amy", "text": "Hello world"},
         )
 
         assert response.status_code == 200
@@ -107,10 +107,10 @@ class TestSpeechEndpoint:
             return_value=mock_audio_content,
         )
 
-        response = client.post(
+        response = client.get(
             "/v1/speech",
             headers=user_auth_headers,
-            json={"voice": "af_heart", "text": "Hello from Kokoro"},
+            params={"voice": "af_heart", "text": "Hello from Kokoro"},
         )
 
         assert response.status_code == 200
@@ -137,19 +137,19 @@ class TestSpeechEndpoint:
         unique_text = f"cache test {uuid.uuid4()}"
 
         # First request - should call provider
-        response1 = client.post(
+        response1 = client.get(
             "/v1/speech",
             headers=user_auth_headers,
-            json={"voice": "Amy", "text": unique_text},
+            params={"voice": "Amy", "text": unique_text},
         )
         assert response1.status_code == 200
         assert mock_synthesize.call_count == 1
 
         # Second request with same parameters - should use cache
-        response2 = client.post(
+        response2 = client.get(
             "/v1/speech",
             headers=user_auth_headers,
-            json={"voice": "Amy", "text": unique_text},
+            params={"voice": "Amy", "text": unique_text},
         )
         assert response2.status_code == 200
         assert response2.content == mock_audio_content
@@ -171,10 +171,10 @@ class TestSpeechEndpoint:
             return_value=mock_audio_content,
         )
 
-        response = client.post(
+        response = client.get(
             "/v1/speech",
             headers=user_auth_headers,
-            json={"voice": "Amy", "text": "test"},
+            params={"voice": "Amy", "text": "test"},
         )
 
         assert response.status_code == 200

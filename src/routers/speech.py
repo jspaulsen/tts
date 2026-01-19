@@ -2,11 +2,10 @@ import io
 from typing import Literal, cast, get_args
 import xml.etree.ElementTree as ET
 
-from fastapi import APIRouter, HTTPException, Request, Response, Depends, status
+from fastapi import APIRouter, HTTPException, Query, Request, Response, Depends, status
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
 
-from src.api.auth import get_current_user, legacy_get_current_user
+from src.api.auth import get_current_user
 from src.cache import LRUCache
 from src.clients.polly import PollyProvider, SSMLException, TextTypeType
 from src.configuration import Configuration
@@ -17,29 +16,32 @@ from src.tts.kokoro import KokoroProvider
 from src.types.aws import AWSStandardVoices
 from src.types.kokoro import KokoroVoices
 
+# Combined type for OpenAPI schema generation
+SupportedVoices = Literal[AWSStandardVoices, KokoroVoices]
 
 # Extend this as we add more providers
 router = APIRouter(prefix="/v1")
 
 
-class SpeechRequest(BaseModel):
-    voice: AWSStandardVoices | KokoroVoices
-    text: str
-    text_type: TextTypeType = TextTypeType.Text
+@router.get("/voices")
+async def get_voices() -> list[str]:
+    return list(get_args(AWSStandardVoices)) + list(get_args(KokoroVoices))
 
 
 # Maybe we want to call specific vendors? I.E>., /v1/speech/polly, /v1/speech/kokoro, etc.
-@router.post("/speech")
+@router.get("/speech")
 async def get_speech(
     request: Request,
-    body: SpeechRequest,
+    voice: SupportedVoices = Query(...),
+    text: str = Query(...),
+    text_type: TextTypeType = Query(default=TextTypeType.Text),
     configuration: Configuration = Depends(Configuration.get),
     user: User = Depends(get_current_user),
 ) -> Response:
     database: Database = request.app.state.database
     cache: LRUCache[bytes] = request.app.state.cache
 
-    if len(body.text) > configuration.maximum_characters_per_request:
+    if len(text) > configuration.maximum_characters_per_request:
         raise HTTPException(
             status_code=status.HTTP_413_CONTENT_TOO_LARGE,
             detail=f"Text length exceeds maximum of {configuration.maximum_characters_per_request} characters.",
@@ -51,7 +53,7 @@ async def get_speech(
     provider: PollyProvider | KokoroProvider | None = None
     cache_key: str | None = None
 
-    match body.voice:
+    match voice:
         case v if v in PollyProvider.voices():
             provider = PollyProvider()
         case v if v in KokoroProvider.voices():
@@ -62,18 +64,18 @@ async def get_speech(
     if provider is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Voice '{body.voice}' is not supported by any available TTS provider.",
+            detail=f"Voice '{voice}' is not supported by any available TTS provider.",
         )
 
     if provider.can_cache:
-        cache_key = provider.generate_cache(body.voice, body.text)
+        cache_key = provider.generate_cache(voice, text)
 
         if cached_audio := await cache.get(cache_key):
             return StreamingResponse(
                 content=io.BytesIO(cached_audio),
                 media_type="audio/mpeg",
                 headers={
-                    "Content-Disposition": f'inline; filename="{body.voice}.mp3"',
+                    "Content-Disposition": f'inline; filename="{voice}.mp3"',
                 }
             )
 
@@ -82,16 +84,16 @@ async def get_speech(
             session.add(
                 Usage(
                     user_id=user.id,
-                    characters_used=len(body.text),
+                    characters_used=len(text),
                 )
             )
 
             await session.commit()
 
     # TODO: Support SSML input where applicable
-    if body.text_type == TextTypeType.Ssml:
+    if text_type == TextTypeType.Ssml:
         try:
-            ET.fromstring(body.text)
+            ET.fromstring(text)
         except ET.ParseError as e:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -99,7 +101,7 @@ async def get_speech(
             )
 
     # TODO: Correct the typing nightmare here
-    content = await provider.synthesize_speech(body.voice, body.text)  # type: ignore
+    content = await provider.synthesize_speech(voice, text)  # type: ignore
     if provider.can_cache and cache_key is not None:
         await cache.set(cache_key, content)
 
@@ -107,6 +109,6 @@ async def get_speech(
         content=io.BytesIO(content),
         media_type="audio/mpeg",
         headers={
-            "Content-Disposition": f'inline; filename="{body.voice}.mp3"',
+            "Content-Disposition": f'inline; filename="{voice}.mp3"',
         }
     )
