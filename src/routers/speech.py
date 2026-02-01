@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException, Query, Request, Response, Depends,
 from fastapi.responses import StreamingResponse
 
 from src.api.auth import get_current_user
+from src.api.limiter import callable_rate_limit, limiter, get_character_cost
 from src.cache import LRUCache
 from src.clients.polly import PollyProvider, SSMLException, TextTypeType
 from src.configuration import Configuration
@@ -30,6 +31,7 @@ async def get_voices() -> list[str]:
 
 # Maybe we want to call specific vendors? I.E>., /v1/speech/polly, /v1/speech/kokoro, etc.
 @router.get("/speech")
+@limiter.limit(callable_rate_limit, cost=get_character_cost)
 async def get_speech(
     request: Request,
     voice: SupportedVoices = Query(...),

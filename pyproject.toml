@@ -14,6 +14,7 @@ dependencies = [
     "opentelemetry-instrumentation-botocore>=0.60b1",
     "pip>=25.3",
     "pydantic-settings>=2.0.0",
+    "slowapi>=0.1.9",
     "soundfile>=0.13.1",
     "sqlmodel>=0.0.27",
     "torch>=2.9.1",
