@@ -2,6 +2,7 @@ from fastapi import HTTPException, Depends, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlmodel import select
 
+from src.cache import TTLCache
 from src.configuration import Configuration
 from src.database import Database
 from src.models.user import User
@@ -36,6 +37,7 @@ async def get_current_user(
     token: str | None = None,
     credentials: HTTPAuthorizationCredentials | None = Depends(security),
 ) -> User:
+    ttl_cache: TTLCache[User] = request.app.state.ttl_cache
     api_token = credentials.credentials if credentials else token
 
     if not api_token:
@@ -43,6 +45,9 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="API token is required",
         )
+
+    if cached_user := await ttl_cache.get(api_token):
+        return cached_user
 
     database: Database = request.app.state.database
 
@@ -60,4 +65,5 @@ async def get_current_user(
                 detail="Invalid API token",
             )
 
+    await ttl_cache.set(api_token, user)
     return user

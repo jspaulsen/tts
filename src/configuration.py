@@ -13,12 +13,14 @@ class Configuration(BaseSettings):
 
     # https://limits.readthedocs.io/en/stable/quickstart.html#rate-limit-string-notation1313
     maximum_characters_per_minute: str = "2048/minute"
-    lru_cache_size: int = 64
+    ttl_cache_ttl: int = 60
+    ttl_cache_size: int = 32
 
-    database_url: SecretStr
+    lru_cache_size: int = 256
 
     # TODO: Let's find a better way to handle admin API keys
     admin_api_token: SecretStr
+    database_url: SecretStr
 
     logfire_token: SecretStr | None = None
     log_level: str = "INFO"

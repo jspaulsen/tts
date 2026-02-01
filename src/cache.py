@@ -1,5 +1,10 @@
+from typing import TypeVar
+
 import asyncio
 from dataclasses import dataclass
+
+
+T = TypeVar("T")
 
 
 @dataclass
@@ -57,3 +62,34 @@ class LRUCache[T]:
                         .time()
                 ),
             )
+
+
+class TTLCache(LRUCache[T]):
+    def __init__(
+        self,
+        maxsize: int = 128,
+        ttl: float = 300.0,
+    ) -> None:
+        self.ttl = ttl
+
+        super().__init__(max_size=maxsize)
+
+    async def get(self, key: str) -> T | None:
+        async with self.lock:
+            entry = self.cache.get(key)
+
+            if entry:
+                current_time = (
+                    asyncio
+                        .get_running_loop()
+                        .time()
+                )
+
+                if current_time - entry.timestamp > self.ttl:
+                    del self.cache[key]
+                    return None
+
+                # entry.timestamp = current_time
+                return entry.value
+
+            return None
