@@ -11,12 +11,14 @@ from opentelemetry.instrumentation.botocore import BotocoreInstrumentor
 from sqlmodel import select
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from slowapi.errors import RateLimitExceeded
 from sqlalchemy.exc import IntegrityError
 
 from src.configuration import Configuration
 from src.database import Database
 import src.models
 from src.cache import LRUCache
+from src.api.limiter import limiter
 from src.routers import (
     legacy_router,
     speech_router,
@@ -65,6 +67,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Setup LRU cache
     app.state.cache = LRUCache(max_size=configuration.lru_cache_size)
     app.state.database = database
+    app.state.limiter = limiter  # TODO: Is this needed?
 
     # TODO: These providers should be initialized based on configuration
     # not hardcoded here.
@@ -89,6 +92,14 @@ app.add_middleware(
 app.include_router(legacy_router)
 app.include_router(speech_router)
 app.include_router(users_router)
+
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Rate limit exceeded"},
+    )
 
 
 @app.exception_handler(IntegrityError)

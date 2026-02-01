@@ -2,6 +2,7 @@ import xml.etree.ElementTree as ET
 
 from fastapi import APIRouter, HTTPException, Request, Response, Depends, status
 
+from src.api.limiter import limiter, get_character_cost
 from src.api.auth import get_current_user
 from src.cache import LRUCache
 from src.clients.polly import PollyProvider, SSMLException, TextTypeType
@@ -16,6 +17,7 @@ router = APIRouter(prefix="/legacy")
 
 
 @router.get("/speech")
+@limiter.limit("2048/minute", cost=get_character_cost)
 async def get_legacy_speech(
     request: Request,
     voice: AWSStandardVoices,

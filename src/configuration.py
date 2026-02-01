@@ -9,7 +9,7 @@ CONFIGURATION: Configuration | None = None
 
 
 class Configuration(BaseSettings):
-    maximum_characters_per_request: int = 2048
+    maximum_characters_per_request: int = 1024
     lru_cache_size: int = 64
 
     database_url: SecretStr
