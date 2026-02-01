@@ -10,6 +10,9 @@ CONFIGURATION: Configuration | None = None
 
 class Configuration(BaseSettings):
     maximum_characters_per_request: int = 1024
+
+    # https://limits.readthedocs.io/en/stable/quickstart.html#rate-limit-string-notation1313
+    maximum_characters_per_minute: str = "2048/minute"
     lru_cache_size: int = 64
 
     database_url: SecretStr

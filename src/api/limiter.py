@@ -1,9 +1,7 @@
 from fastapi import Request
-from fastapi.security import HTTPBearer
 from slowapi import Limiter
 
-
-security = HTTPBearer(auto_error=False)
+from src.configuration import Configuration
 
 
 def by_api_token(request: Request) -> str:
@@ -21,6 +19,14 @@ def by_api_token(request: Request) -> str:
 
 def get_character_cost(text: str | None = None) -> int:
     return len(text if text else '')
+
+
+def callable_rate_limit() -> str:
+    return (
+        Configuration
+            .get()
+            .maximum_characters_per_minute
+    )
 
 
 limiter = Limiter(key_func=by_api_token)
