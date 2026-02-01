@@ -17,7 +17,7 @@ from sqlalchemy.exc import IntegrityError
 from src.configuration import Configuration
 from src.database import Database
 import src.models
-from src.cache import LRUCache
+from src.cache import LRUCache, TTLCache
 from src.api.limiter import limiter
 from src.routers import (
     legacy_router,
@@ -65,6 +65,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logfire.instrument_sqlalchemy(database.engine, enable_commenter=True)
 
     # Setup LRU cache
+    app.state.ttl_cache = TTLCache(maxsize=configuration.ttl_cache_size, ttl=configuration.ttl_cache_ttl)
     app.state.cache = LRUCache(max_size=configuration.lru_cache_size)
     app.state.database = database
     app.state.limiter = limiter  # TODO: Is this needed?
