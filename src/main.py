@@ -47,6 +47,7 @@ logger = logging.getLogger()
 logfire.configure(
     send_to_logfire=CONFIGURATION.logfire_token is not None,
     token=CONFIGURATION.logfire_token.get_secret_value() if CONFIGURATION.logfire_token else None,
+    scrubbing=logfire.ScrubbingOptions(extra_patterns=['token']),
 )
 
 logger.addHandler(logfire.LogfireLoggingHandler())
